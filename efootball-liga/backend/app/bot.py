@@ -10,26 +10,24 @@ from aiogram.types import (
 )
 
 from .config import settings
-
+from .scheduler import scheduler_loop
 
 router = Router()
 
-
-# =========================================================
-# /START
-# =========================================================
 
 @router.message(CommandStart())
 async def start_handler(message: Message):
 
     if not settings.WEBAPP_URL:
+
         await message.answer(
-            "⚠️ Mini App manzili sozlanmagan.\n"
+            "⚠️ Mini App manzili sozlanmagan.\n\n"
             "WEBAPP_URL ni .env faylida kiriting."
         )
-        return
 
-keyboard = InlineKeyboardMarkup(
+return
+
+    keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
@@ -40,31 +38,34 @@ keyboard = InlineKeyboardMarkup(
                 )
             ]
         ]
-)
+    )
 
-name = message.from_user.first_name or "Foydalanuvchi"
+name = (
+        message.from_user.first_name
+        if message.from_user
+        else "Foydalanuvchi"
+    )
 
     await message.answer(
         f"⚽ Salom, {name}!\n\n"
         "🇪🇸 La Liga\n"
         "🏴 Premier League\n\n"
-        "eFootball Liga musobaqasiga xush kelibsiz!\n\n"
-        "Jamoangizni tanlang va o'yinlarni boshlang.",
+        "eFootball Liga musobaqasiga "
+        "xush kelibsiz!\n\n"
+        "Jamoangizni tanlang va "
+        "o'yinlarni boshlang.",
         reply_markup=keyboard
     )
-
-# =========================================================
-# BOT START
-# =========================================================
 
 async def main():
 
     if not settings.BOT_TOKEN:
+
         raise RuntimeError(
             "BOT_TOKEN .env faylida ko'rsatilmagan."
         )
 
-bot = Bot(
+    bot = Bot(
         token=settings.BOT_TOKEN
     )
 
@@ -72,11 +73,29 @@ bot = Bot(
 
     dp.include_router(router)
 
-    print("🤖 Telegram bot ishga tushdi...")
-
-    await dp.start_polling(
-        bot
+    print(
+        "🤖 Telegram bot ishga tushdi..."
     )
 
-if __name__ == "__main__":
+scheduler_task = asyncio.create_task(
+        scheduler_loop(bot)
+    )
+
+    try:
+
+        await dp.start_polling(bot)
+
+    finally:
+
+        scheduler_task.cancel()
+
+        try:
+            await scheduler_task
+        except asyncio.CancelledError:
+            pass
+
+        await bot.session.close()
+
+
+if name == "main":
     asyncio.run(main())
