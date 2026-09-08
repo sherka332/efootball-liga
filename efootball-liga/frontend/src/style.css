@@ -304,4 +304,51 @@ h2 {
   }
 }
 
+.error-box {
+  padding: 13px;
+  margin-bottom: 15px;
+  border-radius: 12px;
+  background: #3a1820;
+  border: 1px solid #74303d;
+  color: #ffb4bf;
+  font-size: 14px;
+}
+
+.success-box {
+  padding: 13px;
+  margin-bottom: 15px;
+  border-radius: 12px;
+  background: #153322;
+  border: 1px solid #2b6b43;
+  color: #8be0a9;
+  font-size: 14px;
+}
+
+.loading,
+.empty-box {
+  padding: 25px;
+  text-align: center;
+  color: #8fa0b8;
+}
+
+.team-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.team-logo img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.available {
+  color: #57c987 !important;
+}
+
+.taken {
+  color: #e87575 !important;
+}
+
+
 
