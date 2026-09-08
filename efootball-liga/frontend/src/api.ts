@@ -1,249 +1,248 @@
 const API_URL = "http://localhost:8000";
 
-export async function getLeagues() {
-  const response = await fetch(
-    ${API_URL}/api/leagues
-  );
-
-  if (!response.ok) {
-    throw new Error("Ligalarni olishda xatolik");
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: {
+        initData: string;
+        ready: () => void;
+        expand: () => void;
+      };
+    };
   }
-
-  return response.json();
 }
 
-export async function getTeams(
-  league?: string
-) {
-  const url = league
-    ? ${API_URL}/api/teams?league=${encodeURIComponent(
-        league
-      )}
-    : ${API_URL}/api/teams;
+function getInitData(): string {
+  const initData = window.Telegram?.WebApp?.initData;
 
-  const response = await fetch(url);
-
-  if (!response.ok) {
+  if (!initData) {
     throw new Error(
-      "Jamoalarni olishda xatolik"
+      "Telegram Mini App ma'lumotlari topilmadi."
     );
   }
 
-  return response.json();
+return initData;
 }
 
-export async function selectTeam(
-  teamId: number,
-  telegramId: number
-) {
-  const response = await fetch(
-    ${API_URL}/api/teams/${teamId}/select?telegram_id=${telegramId},
-    {
-      method: "POST"
-    }
-  );
+function authQuery(): string {
+  return init_data=${encodeURIComponent(getInitData())};
+}
+
+async function request<T>(
+  url: string,
+  options?: RequestInit
+): Promise<T> {
+  const response = await fetch(url, options);
 
   const data = await response.json();
 
   if (!response.ok) {
     throw new Error(
-      data.detail || "Jamoani tanlashda xatolik"
+      data.detail || "Serverda xatolik yuz berdi."
     );
   }
 
-  return data;
+return data;
+}
+
+
+// ===============================
+// AUTH
+// ===============================
+
+export async function authTelegram() {
+  return request(
+    ${API_URL}/api/auth/telegram?${authQuery()},
+    {
+      method: "POST",
+    }
+  );
+}
+
+// ===============================
+// LEAGUES
+// ===============================
+
+export async function getLeagues() {
+  return request<any[]>(
+    ${API_URL}/api/leagues
+  );
+}
+
+// ===============================
+// SEASONS
+// ===============================
+
+export async function getActiveSeason(
+  leagueId: number
+) {
+  return request<any>(
+    ${API_URL}/api/leagues/${leagueId}/season
+  );
+}
+
+// ===============================
+// TEAMS
+// ===============================
+
+export async function getTeams(
+  seasonId: number
+) {
+  return request<any[]>(
+    ${API_URL}/api/seasons/${seasonId}/teams
+  );
+}
+
+export async function selectTeam(
+  seasonId: number,
+  teamId: number
+) {
+  return request<any>(
+    ${API_URL}/api/seasons/${seasonId}/teams/${teamId}/select?${authQuery()},
+    {
+      method: "POST",
+    }
+  );
 }
 
 export async function getMyTeam(
-  telegramId: number,
   seasonId: number
 ) {
-  const response = await fetch(
-    ${API_URL}/api/my-team?telegram_id=${telegramId}&season_id=${seasonId}
+  return request<any>(
+    ${API_URL}/api/seasons/${seasonId}/my-team?${authQuery()}
   );
-
-   if (!response.ok) {
-    throw new Error(
-      "Jamoangizni olishda xatolik"
-    );
-  }
-
-  return response.json();
 }
 
-export async function getStandings(
-  seasonId: number
-) {
-  const response = await fetch(
-    ${API_URL}/api/standings?season_id=${seasonId}
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      "Jadvalni olishda xatolik"
-    );
-  }
-
-  return response.json();
-}
+// ===============================
+// MATCHES
+// ===============================
 
 export async function getMyMatches(
-  telegramId: number,
-  seasonId: number,
-  roundNumber?: number
+  seasonId: number
 ) {
-  let url =
-    ${API_URL}/api/my-matches +
-    ?telegram_id=${telegramId} +
-    &season_id=${seasonId};
-
-   if (roundNumber) {
-    url += &round_number=${roundNumber};
-  }
-
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error(
-      "O'yinlarni olishda xatolik"
-    );
-  }
-
-  return response.json();
+  return request<any[]>(
+    ${API_URL}/api/seasons/${seasonId}/my-matches?${authQuery()}
+  );
 }
 
+export async function getRoundMatches(
+  seasonId: number,
+  roundNumber: number
+) {
+  return request<any[]>(
+    ${API_URL}/api/seasons/${seasonId}/round/${roundNumber}
+  );
+}
+
+// ===============================
+// RESULTS
+// ===============================
+
 export async function submitResult(
-  telegramId: number,
   matchId: number,
   homeGoals: number,
   awayGoals: number
 ) {
-  const response = await fetch(
-    ${API_URL}/api/results?telegram_id=${telegramId},
+  return request<any>(
+    ${API_URL}/api/results?${authQuery()},
     {
       method: "POST",
 
-      headers: {
-        "Content-Type": "application/json"
+        headers: {
+        "Content-Type": "application/json",
       },
 
       body: JSON.stringify({
         match_id: matchId,
         home_goals: homeGoals,
-        away_goals: awayGoals
-      })
+        away_goals: awayGoals,
+      }),
     }
   );
-
-  const data = await response.json();
-
-   if (!response.ok) {
-    throw new Error(
-      data.detail || "Natijani yuborishda xatolik"
-    );
-  }
-
-  return data;
 }
 
 export async function confirmResult(
-  telegramId: number,
   resultId: number
 ) {
-  const response = await fetch(
-    ${API_URL}/api/results/${resultId}/confirm?telegram_id=${telegramId},
+  return request<any>(
+    ${API_URL}/api/results/${resultId}/confirm?${authQuery()},
     {
-      method: "POST"
+      method: "POST",
     }
   );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.detail ||
-        "Natijani tasdiqlashda xatolik"
-    );
-  }
-
-  return data;
 }
 
 export async function rejectResult(
-  telegramId: number,
   resultId: number
 ) {
-  const response = await fetch(
-    ${API_URL}/api/results/${resultId}/reject?telegram_id=${telegramId},
+  return request<any>(
+    ${API_URL}/api/results/${resultId}/reject?${authQuery()},
     {
-      method: "POST"
+      method: "POST",
     }
   );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.detail ||
-        "Natijani rad etishda xatolik"
-    );
-  }
-
-  return data;
 }
 
+// ===============================
+// STANDINGS
+// ===============================
+
+export async function getStandings(
+  seasonId: number
+) {
+  return request<any[]>(
+    ${API_URL}/api/seasons/${seasonId}/standings
+  );
+}
+
+// ===============================
+// CHAT
+// ===============================
+
 export async function getMessages(
-  telegramId: number,
   recipientId?: number
 ) {
   let url =
-    ${API_URL}/api/messages +
-    ?telegram_id=${telegramId};
+    ${API_URL}/api/messages?${authQuery()};
 
-  if (recipientId) {
+  if (recipientId !== undefined) {
     url += &recipient_id=${recipientId};
   }
 
-  const response = await fetch(url);
-
-   if (!response.ok) {
-    throw new Error(
-      "Xabarlarni olishda xatolik"
-    );
-  }
-
-  return response.json();
-}
-
 export async function sendMessage(
-  telegramId: number,
   text: string,
   recipientId?: number
 ) {
-  const response = await fetch(
-    ${API_URL}/api/messages?telegram_id=${telegramId},
+  return request<any>(
+    ${API_URL}/api/messages?${authQuery()},
     {
       method: "POST",
 
-      headers: {
-        "Content-Type": "application/json"
+        headers: {
+        "Content-Type": "application/json",
       },
 
       body: JSON.stringify({
         text,
-        recipient_id: recipientId ?? null
-      })
+        recipient_id:
+          recipientId ?? null,
+      }),
     }
   );
+}
 
-  const data = await response.json();
+// ===============================
+// TELEGRAM APP
+// ===============================
 
-  if (!response.ok) {
-    throw new Error(
-      data.detail ||
-        "Xabar yuborishda xatolik"
-    );
+export function initializeTelegramWebApp() {
+  const webApp =
+    window.Telegram?.WebApp;
+
+  if (!webApp) {
+    return;
   }
 
-  return data;
+  webApp.ready();
+  webApp.expand();
 }
