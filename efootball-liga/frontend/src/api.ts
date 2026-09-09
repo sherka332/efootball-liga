@@ -106,22 +106,20 @@ export async function selectTeam(
   );
 }
 
-export async function getMyTeam(
-  seasonId: number
+export async function selectTeam(
+  seasonId: number,
+  teamId: number
 ) {
+  void seasonId;
+
   const data = await request<any>(
-    ${API_URL}/api/my-team?season_id=${seasonId}&${authQuery()}
+    `${API_URL}/api/teams/${teamId}/select?${authQuery()}`,
+    {
+      method: "POST",
+    }
   );
 
-  return data?.team ?? null;
-}
-
-export async function getMyMatches(
-  seasonId: number
-) {
-  return request<any[]>(
-    ${API_URL}/api/my-matches?season_id=${seasonId}&${authQuery()}
-  );
+  return data.team;
 }
 
 export async function getRoundMatches(
